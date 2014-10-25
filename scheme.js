@@ -64,3 +64,36 @@ GLOBAL.isEq = function(a, b) {
   }
   return (a === b);
 }
+
+// MATH PRIMITIVES //
+
+// incrementor
+GLOBAL.add1 = function(n) {
+  if (!isNumber(n)) {
+    throw 'add1 is only defined for non-negative integers'
+  }
+  return n + 1;
+}
+
+// decrementor
+GLOBAL.sub1 = function(n) {
+  if (!isNumber(n) || isZero(n)) {
+    throw 'sub1 is only defined for positive integers'
+  }
+  return n - 1;
+}
+
+// test for null condition
+GLOBAL.isZero = function(n) {
+  if (!isNumber(n)) {
+    throw 'isZero is only defined for non-negative integers'
+  }
+  return (n === 0);
+}
+
+GLOBAL.isNumber = function(n) {
+  if ((typeof n !== 'number') || (n % 1 !== 0)) {
+    return false;
+  }
+  return true;
+}
