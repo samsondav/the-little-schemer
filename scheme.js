@@ -31,8 +31,7 @@ GLOBAL.cons = function(sexp, list) {
   if (!(list instanceof Array)) {
     throw 'The second argument to cons must be a list.';
   }
-  list.unshift(sexp);
-  return list;
+  return [sexp].concat(list);
 };
 
 GLOBAL.quote = function() {

@@ -13,9 +13,9 @@ GLOBAL.isNumbered = function(aexp) {
 GLOBAL.value = function(nexp) {
   if (isAtom(nexp)) {
     return nexp;
-  } else if (isEq(car(cdr(nexp)), '+') {
+  } else if (isEq(car(cdr(nexp)), '+')) {
     return plus(value(car(nexp)), value(car(cdr(cdr(nexp)))));
-  } else if (isEq(car(cdr(nexp)), 'x') {
+  } else if (isEq(car(cdr(nexp)), 'x')) {
     return multiply(value(car(nexp)), value(car(cdr(cdr(nexp)))));
   } else {
     return expt(value(car(nexp)), value(car(cdr(cdr(nexp)))));
