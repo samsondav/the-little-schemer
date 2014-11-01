@@ -98,9 +98,75 @@ GLOBAL.union = function(set1, set2) {
 GLOBAL.difference = function(set1, set2) {
   if (isNull(set1)) {
     return quote();
-  } else if isMember(car(set1), set2) {
+  } else if (isMember(car(set1), set2)) {
     return difference(cdr(set1), set2);
   } else {
     return cons(car(set1), difference(cdr(set1), set2));
   }
+}
+
+// returns intersect across all sets in a list of sets
+GLOBAL.intersectall = function(l_set) {
+  if (isNull(cdr(l_set))) {
+    return car(l_set);
+  } else{
+    return intersect(car(l_set), intersectall(cdr(l_set)));
+  }
+}
+
+// returns true if the supplied S-expression is a pair (a list of two S-expressions)
+GLOBAL.isPair = function(x) {
+  if (isAtom(x)) {
+    return false; // x is not a list
+  } else if (isNull(x)) {
+    return false; // x is the empty list
+  } else if (isNull(cdr(x))) {
+    return false; // x is a list with only one element
+  } else if (isNull(cdr(cdr(x)))) {
+    return true; // x is a list with exactly two elements
+  } else {
+    return false; // x is a list with more than two elements
+  }
+}
+
+// helper methods to get respective elements of a pair
+GLOBAL.first = function(p) {
+  return car(p);
+}
+
+GLOBAL.second = function(p) {
+  return car(cdr(p));
+}
+
+// build a pair from two S-expressions
+GLOBAL.build = function(s1, s2) {
+  return cons(s1, cons(s2, quote()));
+}
+
+// returns true if the rel is a fun
+// (a rel is a list of pairs that can represent a key-value hash map but with duplicate keys)
+// (a fun is like a key-value hash map with unique keys)
+GLOBAL.isFun = function(rel) {
+  return isSet(firsts(rel));
+}
+
+// reverses a pair
+GLOBAL.revpair = function(pair) {
+  return build(second(pair), first(pair));
+}
+
+// reverses each pair in a rel
+GLOBAL.revrel = function(rel) {
+  if (isNull(rel)) {
+    return quote();
+  } else {
+    return cons(revpair(car(rel)), revrel(cdr(rel)));
+  }
+}
+
+// returns true if the fun is a fullfun
+// a fullfun is essentially a reversible hash (i.e. the set of firsts is unique
+// and so is the set of seconds)
+GLOBAL.isFullfun = function(fun) {
+  return isFun(revrel(fun));
 }
