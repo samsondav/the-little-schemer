@@ -1,4 +1,4 @@
-require('./scheme.js');
+require('./primitives.js');
 require('./chapter2.js');
 require('./chapter3.js');
 require('./chapter4.js');
