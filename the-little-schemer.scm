@@ -62,22 +62,12 @@
     ((eq? (car lat) old) (cons new (cdr lat)))
     (else (cons (car lat) (subst new old (cdr lat))))))
 
-; subst test
-(define lat '(ice cream with fudge for dessert))
-(subst 'topping 'fudge lat)
-
-
 (define (multirember a lat)
   ; removes all elements equal to a from lat
   (cond
     ((null? lat) (quote ()))
     ((eq? (car lat) a) (multirember a (cdr lat)))
     (else (cons (car lat) (multirember a (cdr lat))))))
-
-; multirember test
-(define lat2 '(coffee cup tea cup and hick cup))
-(multirember 'cup lat2)
-
 
 (define (multiinsertR new old lat)
   ; return a new version of lat with new inserted to the right of all elements of old
@@ -86,20 +76,12 @@
     ((eq? (car lat) old) (cons old (cons new (multiinsertR new old (cdr lat)))))
     (else (cons (car lat) (multiinsertR new old (cdr lat))))))
 
-;multiinsertR test
-(multiinsertR 'brown 'cup lat2)
-
-
 (define (multiinsertL new old lat)
   ; return a new version of lat with new inserted to the left of all elements of old
   (cond
     ((null? lat) (quote ()))
     ((eq? (car lat) old) (cons new (cons old (multiinsertL new old (cdr lat)))))
     (else (cons (car lat) (multiinsertL new old (cdr lat))))))
-
-;multiinsertL test
-(multiinsertL 'brown 'cup lat2)
-
 
 (define (multisubst new old lat)
   ; return a new version of lat with new inserted to the left of all elements of old
@@ -108,7 +90,69 @@
     ((eq? (car lat) old) (cons new (multisubst new old (cdr lat))))
     (else (cons (car lat) (multisubst new old (cdr lat))))))
 
-;multisubst test
-(multisubst 'brown 'cup lat2)
 
-; Numbers Games
+
+;tester
+(define (test-fns list-of-tests)
+  ; takes a list of triples (function, argument and expected) and returns true only
+  ; if all function outputs match the expected result
+  (define (test-fn test)
+    (let
+      ([fn (car test)]
+       [args (cadr test)]
+       [expected (caddr test)])
+      (equal? (apply fn args) expected))
+  )
+  (cond
+    ((null? list-of-tests) #t)
+    (else
+      (and (test-fn (car list-of-tests)) (test-fns (cdr list-of-tests))))))
+
+; tests for the tester
+(let ([lat '(coffee cup tea cup and hick cup)])
+  (test-fns (list (list identity (list lat) '(coffee cup tea cup and hick cup))
+                  (list identity '(0) 0))))
+
+; tests for chapter 3
+(let
+  ([lat '(ice cream with fudge for dessert)]
+   [lat2 '(coffee cup tea cup and hick cup)])
+  (test-fns (list
+    (list multisubst (list 'brown 'cup lat2) '(coffee brown tea brown and hick brown))
+    (list multiinsertL (list 'brown 'cup lat2) '(coffee brown cup tea brown cup and hick brown cup))
+    (list multiinsertR (list 'brown 'cup lat2) '(coffee cup brown tea cup brown and hick cup brown))
+    (list multirember (list 'cup lat2) '(coffee tea and hick))
+    (list subst (list 'topping 'fudge lat) '(ice cream with topping for dessert)))))
+
+; Chapter 4
+
+(define (add1 n)
+  (cond
+    ((not (integer? n)) (raise "Argument to add1 must be an integer."))
+    ((< n 0) (raise "Argument to add1 must be positive"))
+    (else (+ n 1))))
+
+(define (sub1 n)
+ (cond
+    ((not (integer? n)) (raise "Argument to sub1 must be an integer."))
+    ((<= n 0) (raise "Argument to sub1 must be positive and cannot be zero"))
+    (else (- n 1))))
+
+; add1 / sub1 test
+;
+
+(define (p+ n m)
+  ; adds two integers using Peano arithmetic
+  (cond
+    ((zero? m) n)
+    (else (add1 (p+ n (sub1 m))))))
+
+(define (p- n m)
+  ; subtracts m from n using Peano arithmetic
+  (cond
+    ((zero? m) n)
+    (else (sub1 (p- n (sub1 m))))))
+
+; test p+ / p-
+
+
