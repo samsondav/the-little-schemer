@@ -1,5 +1,4 @@
-#lang racket
-
+#lang scheme
 ; Chapter 1
 
 (define atom?
@@ -124,6 +123,7 @@
     (list multirember (list 'cup lat2) '(coffee tea and hick))
     (list subst (list 'topping 'fudge lat) '(ice cream with topping for dessert)))))
 
+
 ; Chapter 4
 
 (define (add1 n)
@@ -138,9 +138,6 @@
     ((<= n 0) (raise "Argument to sub1 must be positive and cannot be zero"))
     (else (- n 1))))
 
-; add1 / sub1 test
-;
-
 (define (p+ n m)
   ; adds two integers using Peano arithmetic
   (cond
@@ -153,6 +150,114 @@
     ((zero? m) n)
     (else (sub1 (p- n (sub1 m))))))
 
-; test p+ / p-
+(define (addtup tup)
+  (cond
+    ((null? tup) 0)
+    (else (p+ (car tup) (addtup (cdr tup))))))
 
+(define (p* n m)
+  (cond
+    ((zero? m) 0)
+    (else (p+ n (p* n (sub1 m))))))
+
+(define (tup+ tup1 tup2)
+  ; sums two tups of equal length elementwise
+  (cond
+    ((null? tup1) tup2)
+    ((null? tup2) tup1)
+    (else (cons (p+ (car tup1) (car tup2))
+    (tup+ (cdr tup1) (cdr tup2))))))
+
+(define (> n m)
+  (cond
+    ((and (zero? m) (zero? n)) #f)
+    ((zero? m) #t)
+    ((zero? n) #f)
+    (else (> (sub1 n) (sub1 m)))))
+
+(define (< n m)
+  (cond
+    ((and (zero? m) (zero? n)) #f)
+    ((zero? n) #t)
+    ((zero? m) #f)
+    (else (> (sub1 n) (sub1 m)))))
+
+(define (= n m)
+  (cond
+    ((> n m) #f)
+    ((< n m) #f)
+    (else #t)))
+
+(define (expt n m)
+  (cond
+    ((zero? m) 1)
+    (else (p* n (expt n (sub1 m))))))
+
+(define (quotient n m)
+  (cond
+    ((< n m) 0)
+    (else (add1 (quotient (p- n m) m)))))
+
+(define (length lat)
+  (cond
+    ((null? lat) 0)
+    (else (add1 (length (cdr lat))))))
+
+(define (pick n lat)
+  (cond
+    ((zero? (sub1 n)) (car lat))
+    (else (pick (sub1 n) (cdr lat)))))
+
+(define (rempick n lat)
+  (cond
+    ((zero? (sub1 n)) (cdr lat))
+    (else (cons (car lat) (rempick (sub1 n) (cdr lat))))))
+
+(define (no-nums lat)
+  (cond
+    ((null? lat) '())
+    (else (cond
+            ((number? (car lat)) (no-nums (cdr lat)))
+            (else (cons (car lat) (no-nums (cdr lat))))))))
+
+(define (all-nums lat)
+  (cond
+    ((null? lat) '())
+    (else (cond
+            ((number? (car lat)) (cons (car lat) (all-nums (cdr lat))))
+            (else (all-nums (cdr lat)))))))
+
+(define (eqan? a1 a2)
+  (cond
+    ((and (number? a1) (number? a2)) (= a1 a2))
+    ((or (number? a1) (number? a2)) #f)
+    (else (eq? a1 a2))))
+
+(define (occur a lat)
+  (cond
+    ((null? lat) 0)
+    ((eq? (car lat) a) (add1 (occur a lat)))
+    (else (occur a (cdr lat)))))
+
+(define (one? n)
+  (= n 1))
+
+(define (rempick n lat)
+  (cond
+    ((one? n) (cdr lat))
+    (else (cons (car lat) (rempick (sub1 n) (cdr lat))))))
+
+
+; Chapter 4 tests
+(print "Testing Chapter 4...\n")
+(test-fns (list
+  (list p+ '(4 5) 9)
+  (list p- '(5 4) 1)
+  (list add1 '(3) 4)
+  (list sub1 '(3) 2)
+  (list addtup '((1 2 3 4 5)) 15)
+  (list p* '(2 3) 6)
+  (list tup+ '((1 2 3) (4 5 6)) '(5 7 9))))
+
+; Chapter 5
 
