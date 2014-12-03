@@ -242,14 +242,15 @@
 (define (one? n)
   (= n 1))
 
-(define (rempick n lat)
+(define (rempick-one n lat)
   (cond
     ((one? n) (cdr lat))
     (else (cons (car lat) (rempick (sub1 n) (cdr lat))))))
 
 
 ; Chapter 4 tests
-(print "Testing Chapter 4...\n")
+(print "Testing Chapter 4...")
+(newline)
 (test-fns (list
   (list p+ '(4 5) 9)
   (list p- '(5 4) 1)
@@ -260,4 +261,101 @@
   (list tup+ '((1 2 3) (4 5 6)) '(5 7 9))))
 
 ; Chapter 5
+
+(define (rember* a l)
+  (cond
+    ((null? l) '())
+    ((atom? (car l))
+     (cond
+       ((eq? (car l) a) (rember* a (cdr l)))
+       (else (cons (car l) (rember* a (cdr l))))))
+    (else (cons (rember* a (car l)) (rember* a (cdr l))))))
+
+(define (insertR* new old l)
+  (cond
+    ((null? l) '())
+    ((atom? (car l))
+     (cond
+       ((eq? (car l) old) (cons old (cons new (insertR* new old (cdr l)))))
+       (else (cons (car l) (insertR* new old (cdr l)))))
+     (else (cons (insertR* (car l)) (insertR* (cdr l)))))))
+
+(define (occur* a l)
+  (cond
+    ((null? l) '())
+    ((atom? (car l))
+     (cond
+       ((eq? a (car l)) (add1 (occur* a (cdr l))))
+       (else (occur* a (cdr l)))))
+    (else
+     (p+ (occur* a (car l)) (occur* a (cdr l))))))
+
+(define (subst* new old l)
+  (cond
+    ((null? l) '())
+    ((atom? (car l))
+     (cond
+       ((eq? old (car l)) (cons new (subst* new old (cdr l))))
+       (else (cons (car l) (subst* new old (cdr l))))))
+    (else
+     (cons (subst* new old (car l)) (subst* new old (cdr l))))))
+
+(define (insertL* new old l)
+  (cond
+    ((null? l) '())
+    ((atom? (car l))
+     (cond
+       ((eq? old (car l)) (cons new (cons old (insertL* new old (cdr l)))))
+       (else (cons (car l) (insertL* new old (cdr l))))))
+    (else
+     (cons (insertL* new old (car l)) (insertL* new old (cdr l))))))
+       
+(define (member* a l)
+  (cond
+    ((null? l) #f)
+    ((atom? (car l))
+     (cond
+       ((eq? a (car l)) #t)
+       (else (member* a (cdr l)))))
+    (else
+     (or (member* a (car l)) (member* a (cdr l))))))
+
+(define (leftmost l)
+  (cond
+    ((atom? (car l)) (car l))
+    (else (leftmost (car l)))))
+
+(define (equal? s1 s2)
+  ; a generic equality test that works for any two s-expressions
+  (cond
+    ((and (atom? s1) (atom? s2)) (eqan? s1 s2))
+    ((or (atom? s1) (atom? s2)) #f)
+    (else
+     (eqlist? s1 s2))))
+
+(define (eqlist? l1 l2)
+  (cond
+    ((and (null? l1) (null? l2)) #t)
+    ((or (null? l1) (null? l2)) #f)
+    (else
+     ((and (equal? (car l1) (car l2))
+           (eqlist? (cdr l1) (cdr l2)))))))
+
+(define (rember-sexp s l)
+  ; a rember using the new equal? that works with any s-expression
+  (cond
+    ((null? l) '())
+    ((equal? (car l) s) (cdr l))
+    (else
+     (cons (car l) (rember-sexp s (cdr l))))))
+
+
+
+(print "Testing Chapter 5...")
+(newline)
+(let
+    ([l '(((tomato sauce)) ((bean) sauce) (and ((flying)) sauce))])
+  (test-fns
+   (list
+    (list rember* (list 'sauce l) '(((tomato)) ((bean)) (and ((flying)))) ))))
 
