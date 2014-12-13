@@ -277,8 +277,8 @@
     ((atom? (car l))
      (cond
        ((eq? (car l) old) (cons old (cons new (insertR* new old (cdr l)))))
-       (else (cons (car l) (insertR* new old (cdr l)))))
-     (else (cons (insertR* (car l)) (insertR* (cdr l)))))))
+       (else (cons (car l) (insertR* new old (cdr l))))))
+     (else (cons (insertR* (car l)) (insertR* (cdr l))))))
 
 (define (occur* a l)
   (cond
@@ -325,7 +325,7 @@
     ((atom? (car l)) (car l))
     (else (leftmost (car l)))))
 
-(define (equal? s1 s2)
+(define (equal-s? s1 s2)
   ; a generic equality test that works for any two s-expressions
   (cond
     ((and (atom? s1) (atom? s2)) (eqan? s1 s2))
@@ -338,7 +338,7 @@
     ((and (null? l1) (null? l2)) #t)
     ((or (null? l1) (null? l2)) #f)
     (else
-     ((and (equal? (car l1) (car l2))
+     ((and (equal-s? (car l1) (car l2))
            (eqlist? (cdr l1) (cdr l2)))))))
 
 (define (rember-sexp s l)
@@ -349,8 +349,6 @@
     (else
      (cons (car l) (rember-sexp s (cdr l))))))
 
-
-
 (print "Testing Chapter 5...")
 (newline)
 (let
@@ -358,4 +356,181 @@
   (test-fns
    (list
     (list rember* (list 'sauce l) '(((tomato)) ((bean)) (and ((flying)))) ))))
+
+; Chapter 6
+
+(define (numbered? aexp)
+  (cond
+    ((atom? aexp) (number? aexp))
+    (else (and (numbered? (car aexp)) (numbered? (caddr aexp))))))
+
+; Chapter 10 (got bored of repeating)
+; let's write eval
+
+(define first car)
+(define second cadr)
+(define (build s1 s2)
+  (cons s1 (cons s2 (quote()))))
+
+(define (lookup-in-entry name entry not-found-f)
+  (define (lookup-in-entry-helper name names values not-found-f)
+    (cond
+      ((null? names) (not-found-f name))
+      ((eq? (car names) name) (car values))
+      (else (lookup-in-entry-helper name (cdr names) (cdr values) not-found-f))))
+  (lookup-in-entry-helper name (first entry) (second entry) not-found-f))
+
+(define extend-table cons) ;adds an entry to a table
+
+(define (lookup-in-table name table not-found-f)
+  (define (look-in-next-entry name)
+    (lookup-in-table name (cdr table) not-found-f))
+  (cond
+    ((null? table) (not-found-f name))
+    (else (lookup-in-entry name (car table) look-in-next-entry))))
+
+; a homebrewed eval?
+(define (expression-to-action e)
+  (cond
+    ((atom? e) (atom-to-action e))
+    (else (list-to-action e))))
+
+(define (atom-to-action e)
+  (cond
+    ((number? e) *const)
+    ((eq? e #t) *const)
+    ((eq? e #f) *const)
+    ((eq? e (quote cons)) *const)
+    ((eq? e (quote car)) *const)
+    ((eq? e (quote cdr)) *const)
+    ((eq? e (quote null?)) *const)
+    ((eq? e (quote eq?)) *const)
+    ((eq? e (quote atom?)) *const)
+    ((eq? e (quote zero?)) *const)
+    ((eq? e (quote add1)) *const)
+    ((eq? e (quote sub1)) *const)
+    ((eq? e (quote number?)) *const)
+    (else *identifier)))
+
+; helper function for splitting lists
+(define (list-to-action e)
+  (cond
+    ((atom? (car e))
+     (cond
+       ((eq? (car e) (quote quote)) *quote)
+       ((eq? (car e) (quote lambda)) *lambda)
+       ((eq? (car e) (quote cond)) *cond)
+       (else *application)))
+    (else *application)))
+        
+(define (eval-s e)
+  ; a fully scheme eval
+  (meaning e (quote())))
+
+(define (meaning e table)
+  ((expression-to-action e) e table))
+
+; the action for constants
+(define (*const e table)
+  (cond
+   ((number? e) e)
+   ((eq? e #t) #t)
+   ((eq? e #f) #f)
+   (else (build (quote primitive) e))))
+
+(define (*quote e table)
+  (define text-of second)
+  (text-of e))
+
+(define (*identifier e table)
+  (lookup-in-table e table initial-table))
+
+(define (initial-table name)
+  (car (quote())))
+
+(define (*lambda e table)
+  (build (quote non-primitive)
+         (cons table (cdr e))))
+
+(define table-of first)
+(define formals-of second)
+(define body-of third)
+
+(define (evcon lines table)
+  ; evaluate a cond expression
+  (define (else? x)
+    (cond
+      ((atom? x) (eq? x (quote else)))
+      (else #f)))
+  (define question-of first)
+  (define answer-of second)
+  (cond
+    ((else? (question-of (car lines)))
+     (meaning (answer-of (car lines)) table))
+    ((meaning (question-of (car lines)) table)
+     (meaning (answer-of (car lines)) table))
+    (else (evcon (cdr lines) table))))
+
+(define (*cond e table)
+  (define cond-lines-of cdr)
+  (evcon (cond-lines-of e) table))
+
+(define (evlis args table)
+  ; evaluate a list
+  (cond
+    ((null? args) (quote ()))
+    (else
+     (cons (meaning (car args) table)
+           (evlis (cdr args) table))))) ; this is why we use a table - because it's simpler to add new entries rather than appending to one large one
+
+(define (*application e table)
+  ; evaluate an abitrary S-expression
+  (define function-of car)
+  (define arguments-of cdr)
+  (apply-s
+   (meaning (function-of e) table)
+   (evlis (arguments-of e) table)))
+
+(define (primitive? l)
+  (eq? (first l) (quote primitive)))
+
+(define (non-primitive? l)
+  (eq? (first l) (quote non-primitive)))
+
+(define (apply-s fun vals)
+  ; a fully-scheme apply
+  (cond
+    ((primitive? fun) (apply-primitive (second fun) vals)) ; fun is something like ('primitive cons) or ('non-primitive do-something-cool)
+    ((non-primitive? fun) apply-closure (second fun) vals)))
+
+(define (apply-primitive name vals)
+  (define (:atom? x)
+    ; atom? implemented in terms of scheme primitives
+    (cond
+      ((atom? x) #t)
+      ((null? x) #f)
+      ((eq? (car x) (quote primitive)) #t)
+      ((eq? (car x) (quote non-primitive)) #t)
+      (else #f)))
+  ; the apply function. You could add error checking here for applications of cdr to the empty list, sub1 from 0 etc
+  ; this would also be the place to check for arity mismatch (in this implementation extra arguments are simply ignored)
+  (cond
+    ((eq? name (quote cons)) (cons (first vals) (second vals)))
+    ((eq? name (quote car)) (car (first vals)))
+    ((eq? name (quote cdr)) (cdr (first vals)))
+    ((eq? name (quote null?)) (null? (first vals)))
+    ((eq? name (quote eq?)) (eq? (first vals) (second vals)))
+    ((eq? name (quote atom?)) (:atom? (first vals)))
+    ((eq? name (quote zero?)) (zero? (first vals)))
+    ((eq? name (quote add1)) (add1 (first vals)))
+    ((eq? name (quote sub1)) (sub1 (first vals)))
+    ((eq? name (quote number?)) (number? (first vals)))))
+
+(define (apply-closure closure vals)
+  ; vals is the result of applying evlis to the table (environment) with formals i.e. looking up formals in the table
+  (meaning (body-of closure)
+           (extend-table
+            (new-entry
+             (formals-of closure) vals) ; map formal symbols of function to supplied vals
+            (table-of closure))))
 
